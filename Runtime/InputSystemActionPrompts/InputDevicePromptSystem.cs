@@ -207,6 +207,7 @@ namespace InputSystemActionPrompts
                 if (s_ActiveDevice == null) return null;
 
                 var activeDeviceName = s_ActiveDevice.name;
+                activeDeviceName = NormalizeDeviceName(activeDeviceName);
 
                 if (!s_DeviceDataBindingMap.ContainsKey(activeDeviceName))
                 {
@@ -245,6 +246,7 @@ namespace InputSystemActionPrompts
             {
                 if (s_ActiveDevice == null) return "NO_ACTIVE_DEVICE";
                 var activeDeviceName = s_ActiveDevice.name;
+                activeDeviceName = NormalizeDeviceName(activeDeviceName);
 
                 if (!s_DeviceDataBindingMap.ContainsKey(activeDeviceName))
                 {
@@ -293,9 +295,12 @@ namespace InputSystemActionPrompts
             else
             {
                 if (s_ActiveDevice == null) return (null, null);
-                if (!s_DeviceDataBindingMap.ContainsKey(s_ActiveDevice.name)) return (null, null);
+                var deviceName = s_ActiveDevice.name;   
+                deviceName = NormalizeDeviceName(deviceName);
 
-                validDevice = s_DeviceDataBindingMap[s_ActiveDevice.name];
+                if (!s_DeviceDataBindingMap.ContainsKey(deviceName)) return (null, null);
+
+                validDevice = s_DeviceDataBindingMap[deviceName];
             }
 
             var validEntries = new List<ActionBindingPromptEntry>();
@@ -489,6 +494,10 @@ namespace InputSystemActionPrompts
             s_ActiveDevice = button.device;
             OnActiveDeviceChanged.Invoke(s_ActiveDevice);
         }
-        
+
+        public string NormalizeDeviceName(string deviceName)
+        {
+            return Regex.Replace(deviceName, @"\d+$", "");
+        }
     }
 }
