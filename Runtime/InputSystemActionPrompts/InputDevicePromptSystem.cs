@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Utilities;
+using System.Text.RegularExpressions;
 
 namespace InputSystemActionPrompts
 {
@@ -495,7 +496,7 @@ namespace InputSystemActionPrompts
             OnActiveDeviceChanged.Invoke(s_ActiveDevice);
         }
 
-        public string NormalizeDeviceName(string deviceName)
+        public static string NormalizeDeviceName(string deviceName)
         {
             return Regex.Replace(deviceName, @"\d+$", "");
         }
