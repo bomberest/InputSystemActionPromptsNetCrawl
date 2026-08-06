@@ -235,15 +235,9 @@ namespace InputSystemActionPrompts
             return null;
         }
 
-        /// <summary>
-        /// Creates a TextMeshPro formatted string for all matching sprites for a given tag
-        /// Supports composite tags, eg WASD by returning all matches for active device (observing order)
-        /// </summary>
-        /// <param name="inputTag"></param>
-        /// <returns></returns>
         private static string GetActionPathBindingTextSpriteTags(string inputTag)
         {
-            if (s_PlatformDeviceOverride == null) // not platform override
+            if (s_PlatformDeviceOverride == null)
             {
                 if (s_ActiveDevice == null) return "NO_ACTIVE_DEVICE";
                 var activeDeviceName = s_ActiveDevice.name;
@@ -263,17 +257,25 @@ namespace InputSystemActionPrompts
             }
 
             var (validDevice, matchingPrompt) = GetActionPathBindingPromptEntries(inputTag);
-           
+   
             if (matchingPrompt==null || matchingPrompt.Count==0)
             {
                 return $"MISSING_PROMPT '{inputTag}'";
             }
-            // Return each
+    
             var outputText = string.Empty;
+            var seenSprites = new HashSet<string>();
+    
             foreach (var prompt in matchingPrompt)
             {
+                if (prompt.PromptSprite == null) continue;
+        
+                if (!seenSprites.Add(prompt.PromptSprite.name))
+                    continue;
+            
                 outputText += $"<sprite=\"{validDevice.SpriteAsset.name}\" name=\"{prompt.PromptSprite.name}\" {s_Settings.RichTextTags}>";
             }
+    
             return outputText;
         }
 
