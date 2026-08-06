@@ -364,16 +364,17 @@ namespace InputSystemActionPrompts
         }
         
         /// <summary>
-        /// Extract the usage from a binding path, eg "*/{Submit}" returns "Submit"
+        /// Extract the usage from a binding path.
+        /// Supports: */{Submit}, <Gamepad>/{Submit}, Gamepad/{Submit}
         /// </summary>
-        /// <param name="actionBinding"></param>
-        /// <returns></returns>
         private static string GetUsageFromBindingPath(string actionBinding)
         {
-            return actionBinding.Contains("*/{") ? actionBinding.Substring(3, actionBinding.Length - 4) : String.Empty;
-        } 
-        
-        
+            if (string.IsNullOrEmpty(actionBinding))
+                return string.Empty;
+
+            var match = Regex.Match(actionBinding, @"/\{(.*?)\}$");
+            return match.Success ? match.Groups[1].Value : string.Empty;
+        }
         
         /// <summary>
         /// Extracts all tags from a given string
