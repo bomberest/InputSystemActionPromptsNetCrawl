@@ -491,21 +491,38 @@ namespace InputSystemActionPrompts
 
 
             // Build a map of device name to device data
-            foreach (var devicePromptData in s_Settings.DevicePromptAssets)
+            var deviceNameSources = new Dictionary<string, string>();
+            for (var assetIndex = 0; assetIndex < s_Settings.DevicePromptAssets.Count; assetIndex++)
             {
-                foreach (var deviceName in devicePromptData.DeviceNames)
+                var devicePromptData = s_Settings.DevicePromptAssets[assetIndex];
+                for (var nameIndex = 0; nameIndex < devicePromptData.DeviceNames.Length; nameIndex++)
                 {
+                    var deviceName = devicePromptData.DeviceNames[nameIndex];
+                    var source = $"DevicePromptAssets[{assetIndex}] '{GetDevicePromptAssetLocation(devicePromptData)}', DeviceNames[{nameIndex}]";
                     if (s_DeviceDataBindingMap.ContainsKey(deviceName))
                     {
                         Debug.LogWarning(
-                            $"Duplicate device name found in InputSystemDevicePromptSettings: {deviceName}. Check your entries");
+                            $"Duplicate device name found in InputSystemDevicePromptSettings: {deviceName}. " +
+                            $"First entry: {deviceNameSources[deviceName]}. Duplicate entry: {source}. " +
+                            "The first entry is used. Remove the duplicate name or asset reference from these settings.",
+                            s_Settings);
                     }
                     else
                     {
                         s_DeviceDataBindingMap.Add(deviceName, devicePromptData);
+                        deviceNameSources.Add(deviceName, source);
                     }
                 }
             }
+        }
+
+        private static string GetDevicePromptAssetLocation(InputDevicePromptData devicePromptData)
+        {
+#if UNITY_EDITOR
+            var assetPath = UnityEditor.AssetDatabase.GetAssetPath(devicePromptData);
+            if (!string.IsNullOrEmpty(assetPath)) return assetPath;
+#endif
+            return devicePromptData.name;
         }
         
         /// <summary>
