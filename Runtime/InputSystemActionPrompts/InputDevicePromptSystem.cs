@@ -71,6 +71,22 @@ namespace InputSystemActionPrompts
 
         private static InputDevicePromptData s_PlatformDeviceOverride;
 
+        // Static state survives Play Mode when Domain Reload is disabled.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetState()
+        {
+            s_EventListener?.Dispose();
+            s_EventListener = null;
+            InputSystem.onDeviceChange -= OnDeviceChange;
+            s_Initialised = false;
+            s_Settings = null;
+            s_ActiveDevice = null;
+            s_PlatformDeviceOverride = null;
+            s_ActionBindingMap.Clear();
+            s_DeviceDataBindingMap.Clear();
+            OnActiveDeviceChanged = delegate { };
+        }
+
         public static bool GetPlatformDeviceOverride(out InputDevicePromptData inputDevice)
         {
             if (s_PlatformDeviceOverride != null)
@@ -99,6 +115,8 @@ namespace InputSystemActionPrompts
         /// </summary>
         private static void Initialise()
         {
+            if (s_Initialised) return;
+
             Debug.Log("Initialising InputDevicePromptSystem");
             s_Settings =InputSystemDevicePromptSettings.GetSettings();
             
@@ -113,6 +131,11 @@ namespace InputSystemActionPrompts
                 Debug.LogError($"{nameof(InputSystemDevicePromptSettings.PromptSpriteFormatter)} must include {InputSystemDevicePromptSettings.PromptSpriteFormatterSpritePlaceholder} or no sprites will be shown.");
             }
             
+            // Build successfully before subscribing, so a failed attempt cannot leak listeners.
+            BuildBindingMaps();
+            FindDefaultDevice();
+            GetPlatformDeviceOverride(out s_PlatformDeviceOverride);
+
             // We'll want to listen to buttons being pressed on any device
             // in order to dynamically switch device prompts (From description in InputSystem.cs)
             s_EventListener = InputSystem.onAnyButtonPress.Call(OnButtonPressed);
@@ -120,11 +143,6 @@ namespace InputSystemActionPrompts
             // Listen to device change. If the active device is disconnected, switch to default
             InputSystem.onDeviceChange += OnDeviceChange;
             
-            BuildBindingMaps();
-            FindDefaultDevice();
-
-            GetPlatformDeviceOverride(out s_PlatformDeviceOverride);
-
             s_Initialised = true;
         }
 
@@ -406,6 +424,7 @@ namespace InputSystemActionPrompts
         /// </summary>
         private static void FindDefaultDevice()
         {
+            s_ActiveDevice = null;
             // When we start up there have been no button presses, so we want to pick the first device
             // that matches the priorities in the settings file
             
@@ -437,7 +456,8 @@ namespace InputSystemActionPrompts
         /// </summary>
         private static void BuildBindingMaps()
         {
-            s_ActionBindingMap = new Dictionary<string, List<ActionBindingMapEntry>>();
+            s_ActionBindingMap.Clear();
+            s_DeviceDataBindingMap.Clear();
             
             // Build a map of all controls and associated bindings
             foreach (var inputActionAsset in s_Settings.InputActionAssets)
